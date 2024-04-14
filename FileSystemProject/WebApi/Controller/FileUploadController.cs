@@ -1,13 +1,14 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Mvc;
+//using Swashbuckle.AspNetCore.SwaggerUI; //uncomment to use swagger
 
 
 // The WebApi folder and Controller folder were created by me
 namespace FileSystemProject.WebApi.Controller
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class FileUploadController : ControllerBase
     {
         private readonly string _storageAccountName = ""; // Storage Account Name
@@ -22,17 +23,39 @@ namespace FileSystemProject.WebApi.Controller
             _blobServiceClient = new BlobServiceClient(new Uri(blobUri), credential);
         }
 
+        //[HttpPost]
+        //[Route("uploadFiles/{name}",Name = "UploadFile")]
+        //public async Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file, string name)
+        //{
+        //    var _name = name;
+        //    var blobUris = new List<Uri>();
+        //    //string filePath = "Hi.txt";
+        //    var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+        //    var blobContainer = _blobServiceClient.GetBlobContainerClient(_fileContainerName);
+        //    var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
+
+        //    using( var stream = file.OpenReadStream())
+        //    {
+        //        await blob.UploadAsync(stream, true);
+        //    }
+        //    //await blob.UploadAsync(filePath, true);
+        //    blobUris.Add(blob.Uri);
+
+        //    return blobUris;
+        //}
+
         [HttpPost]
-        [Route("fileUpload",Name = "UploadFile")]
+        [Route("uploadFiles", Name = "UploadFile")]
         public async Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file)
         {
+            //var _name = name;
             var blobUris = new List<Uri>();
             //string filePath = "Hi.txt";
             var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
             var blobContainer = _blobServiceClient.GetBlobContainerClient(_fileContainerName);
             var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
 
-            using( var stream = file.OpenReadStream())
+            using (var stream = file.OpenReadStream())
             {
                 await blob.UploadAsync(stream, true);
             }
@@ -41,5 +64,7 @@ namespace FileSystemProject.WebApi.Controller
 
             return blobUris;
         }
+
+
     }
 }
