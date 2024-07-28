@@ -11,15 +11,15 @@ namespace FileSystemProject.WebApi.Controller
     [Route("api/[controller]")]
     public class FileUploadController : ControllerBase
     {
-        private readonly string _storageAccountName = ""; // Storage Account Name
-        private readonly string _fileContainerName = ""; // Storage Account Name
-        private readonly string _storageAccountAccessKey = ""; // Storage Account Access Key
         private readonly BlobServiceClient _blobServiceClient;
 
-        public FileUploadController()
+        public IConfiguration Configuration { get; }
+
+        public FileUploadController(IConfiguration configuration)
         {
-            var credential = new StorageSharedKeyCredential(_storageAccountName, _storageAccountAccessKey);
-            var blobUri = $"https://{_storageAccountName}.blob.core.windows.net";
+            Configuration = configuration;
+            var credential = new StorageSharedKeyCredential(Configuration["FileStorage:StorageAccountName"], Configuration["FileStorage:StorageAccountAccessKey"]);
+            var blobUri = $"https://{Configuration["FileStorage:StorageAccountName"]}.blob.core.windows.net";
             _blobServiceClient = new BlobServiceClient(new Uri(blobUri), credential);
         }
 
@@ -34,7 +34,7 @@ namespace FileSystemProject.WebApi.Controller
             var blobUris = new List<Uri>();
             //string filePath = "Hi.txt";
             var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(_fileContainerName);
+            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
             var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
 
             using (var stream = file.OpenReadStream())
@@ -52,7 +52,7 @@ namespace FileSystemProject.WebApi.Controller
         public async Task<List<Uri>> GetFilesAsync()
         {
             var blobUris = new List<Uri>();
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(_fileContainerName);
+            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
 
             await foreach(var item in blobContainer.GetBlobsAsync())
             {

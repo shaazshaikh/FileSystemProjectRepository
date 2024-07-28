@@ -1,7 +1,12 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using System.Data;
+using System.Data.SqlClient;
+using System.Text;
 //using Swashbuckle.AspNetCore.SwaggerUI;
 //using Microsoft.OpenApi.Models;
 
@@ -11,6 +16,12 @@ namespace FileSystemProject
     // Below is the class which helps in configuring the server
     public class MyStartUpClass
     {
+        public IConfiguration Configuration { get; }
+
+        public MyStartUpClass(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
         //We cannot modify name of this function
         public void ConfigureServices(IServiceCollection services)
         {
@@ -24,7 +35,23 @@ namespace FileSystemProject
                 options.AddPolicy("CorsPolicy",
                     builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             });
+            services.AddSingleton<IConfiguration>(Configuration);
+            services.AddTransient<IDbConnection>((sp) => new SqlConnection(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers();
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    //ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = Configuration["Jwt:Issuer"],
+                    ValidAudience = Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
+                };
+            });
         }
 
         //We cannot modify name of this function. It helps in  setting up http request pipeline
