@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using FileSystemProject.Repository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,6 +37,7 @@ namespace FileSystemProject
                     builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             });
             services.AddSingleton<IConfiguration>(Configuration);
+            services.AddTransient<IFileRepository,FileRepository>();
             services.AddTransient<IDbConnection>((sp) => new SqlConnection(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers();
 
@@ -76,6 +78,7 @@ namespace FileSystemProject
 
             app.UseHttpsRedirection(); // Redirects http to https
             app.UseRouting();
+            app.UseAuthentication();
             app.UseAuthorization();// need to figure out
             //app.UseEndpoints(endpoints =>
             //{
