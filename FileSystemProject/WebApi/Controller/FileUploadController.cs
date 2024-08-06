@@ -23,7 +23,7 @@ namespace FileSystemProject.WebApi.Controller
         [Route("uploadFiles", Name = "UploadFile")]
         public async Task<List<Uri>> UploadFiles([FromForm] IFormFile file)
         {
-            var blobUris = await _fileRepository.UploadFilesAsync(file);
+            var blobUris = await _fileRepository.UploadFilesAsync(file,string.Empty);
 
             return blobUris;
         }
@@ -32,7 +32,7 @@ namespace FileSystemProject.WebApi.Controller
         [Route("getFiles", Name = "GetFile")]
         public async Task<List<Uri>> GetFiles()
         {
-            var blobUris = await _fileRepository.GetFilesAsync();
+            var blobUris = await _fileRepository.GetFilesAsync(string.Empty);
 
             return blobUris;
         }

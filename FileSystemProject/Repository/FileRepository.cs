@@ -6,8 +6,8 @@ namespace FileSystemProject.Repository
 {
     public interface IFileRepository
     {
-        Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file);
-        Task<List<Uri>> GetFilesAsync();
+        Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file, string folderPath);
+        Task<List<Uri>> GetFilesAsync(string folderPath);
     }
     public class FileRepository : IFileRepository
     {
@@ -21,12 +21,14 @@ namespace FileSystemProject.Repository
             _blobServiceClient = new BlobServiceClient(new Uri(blobUri), credential);
         }
 
-        public async Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file)
+        public async Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file, string folderPath)
         {
             var blobUris = new List<Uri>();
-            var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            //var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var blobName = $"{folderPath}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
             var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
+            //var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
+            var blob = blobContainer.GetBlobClient(blobName);
 
             using (var stream = file.OpenReadStream())
             {
@@ -38,12 +40,12 @@ namespace FileSystemProject.Repository
             return blobUris;
         }
 
-        public async Task<List<Uri>> GetFilesAsync()
+        public async Task<List<Uri>> GetFilesAsync(string folderPath)
         {
             var blobUris = new List<Uri>();
             var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
 
-            await foreach (var item in blobContainer.GetBlobsAsync())
+            await foreach (var item in blobContainer.GetBlobsAsync(prefix:folderPath))
             {
                 var uri = blobContainer.GetBlobClient(item.Name).Uri;
                 blobUris.Add(uri);
