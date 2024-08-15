@@ -15,11 +15,11 @@ using System.Text;
 namespace FileSystemProject
 {
     // Below is the class which helps in configuring the server
-    public class MyStartUpClass
+    public class FileSystemStartup
     {
         public IConfiguration Configuration { get; }
 
-        public MyStartUpClass(IConfiguration configuration)
+        public FileSystemStartup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
@@ -79,6 +79,7 @@ namespace FileSystemProject
             app.UseHttpsRedirection(); // Redirects http to https
             app.UseRouting();
             app.UseAuthentication();
+            app.UseMiddleware<FileSystemMiddleware>();// Custom middleware
             app.UseAuthorization();// need to figure out
             //app.UseEndpoints(endpoints =>
             //{
