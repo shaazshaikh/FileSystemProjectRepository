@@ -12,11 +12,11 @@ namespace FileSystemProject.WebApi.Controller
     [Route("api/[controller]")]
     public class FileUploadController : ControllerBase
     {
-        private readonly IFileRepository _fileRepository;
+        private readonly IFileBlobRepository _fileBlobRepository;
 
-        public FileUploadController(IFileRepository fileRepository)
+        public FileUploadController(IFileBlobRepository fileBlobRepository)
         {
-            _fileRepository = fileRepository;
+            _fileBlobRepository = fileBlobRepository;
         }
 
         [HttpPost]
@@ -24,7 +24,7 @@ namespace FileSystemProject.WebApi.Controller
         public async Task<List<Uri>> UploadFiles([FromForm] IFormFile file, [FromForm] string folder)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileRepository.UploadFilesAsync(file, folder);
+            var blobUris = await _fileBlobRepository.UploadFilesAsync(userId,file, folder);
 
             return blobUris;
         }
@@ -34,7 +34,7 @@ namespace FileSystemProject.WebApi.Controller
         public async Task<List<Uri>> GetFiles()
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileRepository.GetFilesAsync(string.Empty);
+            var blobUris = await _fileBlobRepository.GetFilesAsync(string.Empty);
 
             return blobUris;
         }
