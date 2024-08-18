@@ -37,7 +37,8 @@ namespace FileSystemProject
                     builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             });
             services.AddSingleton<IConfiguration>(Configuration);
-            services.AddTransient<IFileRepository,FileRepository>();
+            services.AddTransient<IFileBlobRepository, FileBlobRepository>();
+            services.AddTransient<IFileRepository, FileRepository>();
             services.AddTransient<IDbConnection>((sp) => new SqlConnection(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers();
 

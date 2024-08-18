@@ -1,57 +1,32 @@
-﻿using Azure.Storage;
-using Azure.Storage.Blobs;
-using Microsoft.AspNetCore.Mvc;
+﻿using Dapper;
+using System.Data;
 
 namespace FileSystemProject.Repository
 {
     public interface IFileRepository
     {
-        Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file, string folderPath);
-        Task<List<Uri>> GetFilesAsync(string folderPath);
+        Task InsertFileEntry(string UserId, string FileName, long FileSize, string StoragePath, Guid? ParentFolderId, string FilePath, bool IsDeleted, bool IsDeletedByUser, DateTime CreatedDate, DateTime ModifiedDate);
+        Task<bool> DeleteFileEntry();
     }
+
     public class FileRepository : IFileRepository
     {
-        private readonly BlobServiceClient _blobServiceClient;
-        public IConfiguration Configuration { get; }
-        public FileRepository(IConfiguration configuration) 
+        private readonly IDbConnection _dbConnection;
+        public FileRepository(IDbConnection dbConnection)
         {
-            Configuration = configuration;
-            var credential = new StorageSharedKeyCredential(Configuration["FileStorage:StorageAccountName"], Configuration["FileStorage:StorageAccountAccessKey"]);
-            var blobUri = $"https://{Configuration["FileStorage:StorageAccountName"]}.blob.core.windows.net";
-            _blobServiceClient = new BlobServiceClient(new Uri(blobUri), credential);
+            _dbConnection = dbConnection;
+        }
+        public async Task InsertFileEntry(string userId, string fileName, long fileSize, string storagePath, Guid? parentFolderId, string filePath, bool isDeleted, bool isDeletedByUser, DateTime createdDate, DateTime modifiedDate)
+        {
+            string insertFileQuery = "insert into Files(Id, UserId, FileName, FileSize, StoragePath, ParentFolderId, FilePath, IsDeleted, IsDeletedByUser, CreatedDate, ModifiedDate) values(NewId(), @UserId, @FileName, @FileSize, @StoragePath, null, @FilePath, 0, 0, getDate(), getDate())";
+
+            await _dbConnection.ExecuteAsync(insertFileQuery, new { UserId = userId, FileName = fileName, FileSize = fileSize, StoragePath = storagePath, FilePath = filePath });
         }
 
-        public async Task<List<Uri>> UploadFilesAsync([FromForm] IFormFile file, string folderPath)
+        public async Task<bool> DeleteFileEntry()
         {
-            var blobUris = new List<Uri>();
-            //var blobName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-            var blobName = $"{folderPath}/{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            //var blob = blobContainer.GetBlobClient($"HomeFolder/{blobName}");
-            var blob = blobContainer.GetBlobClient(blobName);
-
-            using (var stream = file.OpenReadStream())
-            {
-                await blob.UploadAsync(stream, true);
-            }
-            //await blob.UploadAsync(filePath, true);
-            blobUris.Add(blob.Uri);
-
-            return blobUris;
+            return true;
         }
-
-        public async Task<List<Uri>> GetFilesAsync(string folderPath)
-        {
-            var blobUris = new List<Uri>();
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-
-            await foreach (var item in blobContainer.GetBlobsAsync(prefix:folderPath))
-            {
-                var uri = blobContainer.GetBlobClient(item.Name).Uri;
-                blobUris.Add(uri);
-            }
-
-            return blobUris;
-        }
+        
     }
 }
