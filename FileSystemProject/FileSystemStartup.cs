@@ -39,6 +39,7 @@ namespace FileSystemProject
             services.AddSingleton<IConfiguration>(Configuration);
             services.AddTransient<IFileBlobRepository, FileBlobRepository>();
             services.AddTransient<IFileRepository, FileRepository>();
+            services.AddTransient<IFolderRepository, FolderRepository>();
             services.AddTransient<IDbConnection>((sp) => new SqlConnection(Configuration.GetConnectionString("DefaultConnection")));
             services.AddControllers();
 
