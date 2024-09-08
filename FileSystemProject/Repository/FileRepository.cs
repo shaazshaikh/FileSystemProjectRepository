@@ -18,9 +18,9 @@ namespace FileSystemProject.Repository
         }
         public async Task<bool> InsertFileEntry(string userId, string fileName, long fileSize, string storagePath, Guid? parentFolderId, string filePath, bool isDeleted, bool isDeletedByUser, DateTime createdDate, DateTime modifiedDate)
         {
-            string insertFileQuery = "insert into Files(Id, UserId, FileName, FileSize, StoragePath, ParentFolderId, FilePath, IsDeleted, IsDeletedByUser, CreatedDate, ModifiedDate) values(NewId(), @UserId, @FileName, @FileSize, @StoragePath, null, @FilePath, 0, 0, getDate(), getDate())";
+            string insertFileQuery = "insert into Files(Id, UserId, FileName, FileSize, StoragePath, ParentFolderId, FilePath, IsDeleted, IsDeletedByUser, CreatedDate, ModifiedDate) values(NewId(), @UserId, @FileName, @FileSize, @StoragePath, @ParentFolderId, @FilePath, 0, 0, getDate(), getDate())";
 
-            int rowsAffected = await _dbConnection.ExecuteAsync(insertFileQuery, new { UserId = userId, FileName = fileName, FileSize = fileSize, StoragePath = storagePath, FilePath = filePath });
+            int rowsAffected = await _dbConnection.ExecuteAsync(insertFileQuery, new { UserId = userId, FileName = fileName, FileSize = fileSize, StoragePath = storagePath, ParentFolderId = parentFolderId, FilePath = filePath });
             if (rowsAffected > 0)
             {
                 return true;
