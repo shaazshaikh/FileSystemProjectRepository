@@ -1,4 +1,5 @@
 ﻿using FileSystemProject.Models.RequestModels;
+using FileSystemProject.Models.ResponseModels;
 using FileSystemProject.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,10 +33,10 @@ namespace FileSystemProject.WebApi.Controller
 
         [HttpPost]
         [Route("getFiles", Name = "GetFile")]
-        public async Task<List<Uri>> GetFiles([FromBody] FileRequestModel obj)
+        public async Task<List<FileResponseModel>> GetFiles([FromBody] FileRequestModel obj)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileBlobRepository.GetFilesAsync(userId, obj.FolderPath);
+            var blobUris = await _fileBlobRepository.GetFilesAsync(userId, obj.ParentFolderId);
 
             return blobUris;
         }
