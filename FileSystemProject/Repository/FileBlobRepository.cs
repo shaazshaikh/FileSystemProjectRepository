@@ -1,5 +1,6 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
+using FileSystemProject.Models.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FileSystemProject.Repository
@@ -7,7 +8,7 @@ namespace FileSystemProject.Repository
     public interface IFileBlobRepository
     {
         Task<List<Uri>> UploadFilesAsync(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId);
-        Task<List<Uri>> GetFilesAsync(string userId, string folderPath);
+        Task<List<FileResponseModel>> GetFilesAsync(string userId, string parentFolderId);
     }
     public class FileBlobRepository : IFileBlobRepository
     {
@@ -44,15 +45,35 @@ namespace FileSystemProject.Repository
             return blobUris;
         }
 
-        public async Task<List<Uri>> GetFilesAsync(string userId, string folderPath)
+        public async Task<List<FileResponseModel>> GetFilesAsync(string userId, string parentFolderId)
         {
-            var blobUris = new List<Uri>();
+            var filesFromDatabase = await _fileRepository.GetFiles(userId, parentFolderId);
+            var blobUris = new List<FileResponseModel>();
             var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            var blobsPath = $"{userId}/{folderPath}";
-            await foreach (var item in blobContainer.GetBlobsAsync(prefix: blobsPath))
+            //var blobsPath = $"{userId}/{folderPath}";
+            //await foreach (var item in blobContainer.GetBlobsAsync(prefix: blobsPath))
+            //{
+            //    var uri = blobContainer.GetBlobClient(item.Name).Uri;
+            //    blobUris.Add(uri);
+            //}
+
+            foreach(var file in filesFromDatabase)
             {
-                var uri = blobContainer.GetBlobClient(item.Name).Uri;
-                blobUris.Add(uri);
+                var blobName = new Uri(file.StoragePath).AbsolutePath.Replace("/filesystemcontainer/","").TrimStart('/');
+                var blobClient = blobContainer.GetBlobClient(blobName);
+                if(await blobClient.ExistsAsync())
+                {
+                    var fileUri = blobClient.Uri;
+                    blobUris.Add(new FileResponseModel
+                    {
+                        FileName = file.FileName,
+                        FilePath = file.FilePath,
+                        FileSize = file.FileSize,
+                        FileDownloadUri = fileUri,
+                        ModifiedDate = file.ModifiedDate,
+                        StoragePath = file.StoragePath
+                    });
+                }
             }
 
             return blobUris;

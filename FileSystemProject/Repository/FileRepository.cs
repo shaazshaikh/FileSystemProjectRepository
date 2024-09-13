@@ -1,12 +1,14 @@
 ﻿using Dapper;
+using FileSystemProject.Models.ResponseModels;
 using System.Data;
 
 namespace FileSystemProject.Repository
 {
     public interface IFileRepository
     {
-        Task<bool> InsertFileEntry(string UserId, string FileName, long FileSize, string StoragePath, Guid? ParentFolderId, string FilePath, bool IsDeleted, bool IsDeletedByUser, DateTime CreatedDate, DateTime ModifiedDate);
+        Task<bool> InsertFileEntry(string userId, string fileName, long fileSize, string storagePath, Guid? parentFolderId, string filePath, bool isDeleted, bool isDeletedByUser, DateTime createdDate, DateTime modifiedDate);
         Task<bool> DeleteFileEntry();
+        Task<IEnumerable<FileResponseModel>> GetFiles(string userId, string parentFolderId);
     }
 
     public class FileRepository : IFileRepository
@@ -34,6 +36,16 @@ namespace FileSystemProject.Repository
         public async Task<bool> DeleteFileEntry()
         {
             return true;
+        }
+
+        public async Task<IEnumerable<FileResponseModel>> GetFiles(string userId, string parentFolderId)
+        {
+            string getFilesQuery = "select fileName, fileSize, modifiedDate, storagePath, filePath from Files where userId = @UserId and parentFolderId = @ParentFolderId";
+            Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
+
+            var files = await _dbConnection.QueryAsync<FileResponseModel>(getFilesQuery, new { userId = Guid.Parse(userId), parentFolderId = parentFolderGuid });
+
+            return files;
         }
         
     }
