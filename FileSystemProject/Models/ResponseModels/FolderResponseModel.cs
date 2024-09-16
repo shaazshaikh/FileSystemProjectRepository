@@ -1,4 +1,6 @@
-﻿namespace FileSystemProject.Models.ResponseModels
+﻿using FileSystemProject.Enums;
+
+namespace FileSystemProject.Models.ResponseModels
 {
     public class FolderResponseModel
     {
@@ -9,5 +11,6 @@
         public long? FolderSize { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime ModifiedDate { get; set; }
+        public FileOrFolderType FolderType { get; set; } = FileOrFolderType.Folder;
     }
 }

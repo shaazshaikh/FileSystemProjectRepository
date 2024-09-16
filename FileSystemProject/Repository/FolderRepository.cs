@@ -9,7 +9,8 @@ namespace FileSystemProject.Repository
     {
         Task<bool> InsertFolderEntry(string userId, string parentFolderId, string folderPath);
         Task<bool> DeleteFolderEntry();
-        Task<FolderResponseModel> GetFolderDetail(string userId, string folderName);
+        Task<FolderResponseModel> FetchFolderDetails(string userId, string folderName);
+        Task<IEnumerable<FolderResponseModel>> FetchFolderContents(string userId, string parentFolderId);
     }
 
     public class FolderRepository : IFolderRepository
@@ -38,10 +39,10 @@ namespace FileSystemProject.Repository
             }
         }
 
-        public async Task<FolderResponseModel> GetFolderDetail(string userId, string folderName)
+        public async Task<FolderResponseModel> FetchFolderDetails(string userId, string folderName)
         {
 
-            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and foldername = @folderName";
+            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and folderName = @folderName";
             FolderResponseModel folderDetails = await _dbConnection.QueryFirstOrDefaultAsync<FolderResponseModel>(sqlQuery, new
             {
                 userId = Guid.Parse(userId),
@@ -49,6 +50,18 @@ namespace FileSystemProject.Repository
             });
 
             return folderDetails;
+        }
+        public async Task<IEnumerable<FolderResponseModel>> FetchFolderContents(string userId, string parentFolderId)
+        {
+
+            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and parentFolderId = @parentFolderId";
+            var folderContents = await _dbConnection.QueryAsync<FolderResponseModel>(sqlQuery, new
+            {
+                userId = Guid.Parse(userId),
+                parentFolderId = Guid.Parse(parentFolderId)
+            });
+
+            return folderContents;
         }
 
         public async Task<bool> DeleteFolderEntry()

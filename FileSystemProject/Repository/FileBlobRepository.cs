@@ -7,8 +7,8 @@ namespace FileSystemProject.Repository
 {
     public interface IFileBlobRepository
     {
-        Task<List<Uri>> UploadFilesAsync(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId);
-        Task<List<FileResponseModel>> GetFilesAsync(string userId, string parentFolderId);
+        Task<List<Uri>> UploadFiles(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId);
+        Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId);
     }
     public class FileBlobRepository : IFileBlobRepository
     {
@@ -24,7 +24,7 @@ namespace FileSystemProject.Repository
             _fileRepository = fileRepository;
         }
 
-        public async Task<List<Uri>> UploadFilesAsync(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId)
+        public async Task<List<Uri>> UploadFiles(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId)
         {
             var fileExtension = Path.GetExtension(file.FileName);
             var filePath = $"{folderPath}/{file.FileName}";
@@ -45,7 +45,7 @@ namespace FileSystemProject.Repository
             return blobUris;
         }
 
-        public async Task<List<FileResponseModel>> GetFilesAsync(string userId, string parentFolderId)
+        public async Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId)
         {
             var filesFromDatabase = await _fileRepository.GetFiles(userId, parentFolderId);
             var blobUris = new List<FileResponseModel>();
@@ -59,21 +59,32 @@ namespace FileSystemProject.Repository
 
             foreach(var file in filesFromDatabase)
             {
-                var blobName = new Uri(file.StoragePath).AbsolutePath.Replace("/filesystemcontainer/","").TrimStart('/');
-                var blobClient = blobContainer.GetBlobClient(blobName);
-                if(await blobClient.ExistsAsync())
+                //var blobName = new Uri(file.StoragePath).AbsolutePath.Replace("/filesystemcontainer/","").TrimStart('/');
+                //var blobClient = blobContainer.GetBlobClient(blobName);
+                //if(await blobClient.ExistsAsync())
+                //{
+                //    var fileUri = blobClient.Uri;
+                //    blobUris.Add(new FileResponseModel
+                //    {
+                //        FileName = file.FileName,
+                //        FilePath = file.FilePath,
+                //        FileSize = file.FileSize,
+                //        FileDownloadUri = fileUri,
+                //        ModifiedDate = file.ModifiedDate,
+                //        StoragePath = file.StoragePath
+                //    });
+                //}
+
+                var fileUri = new Uri(file.StoragePath);
+                blobUris.Add(new FileResponseModel
                 {
-                    var fileUri = blobClient.Uri;
-                    blobUris.Add(new FileResponseModel
-                    {
-                        FileName = file.FileName,
-                        FilePath = file.FilePath,
-                        FileSize = file.FileSize,
-                        FileDownloadUri = fileUri,
-                        ModifiedDate = file.ModifiedDate,
-                        StoragePath = file.StoragePath
-                    });
-                }
+                    FileName = file.FileName,
+                    FilePath = file.FilePath,
+                    FileSize = file.FileSize,
+                    FileDownloadUri = fileUri,
+                    ModifiedDate = file.ModifiedDate,
+                    StoragePath = file.StoragePath
+                });
             }
 
             return blobUris;
