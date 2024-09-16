@@ -30,7 +30,7 @@ namespace FileSystemProject.WebApi.Controller
         public async Task<IActionResult> GetFolderDetails(string folderName)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var folderDetails = await _folderRepository.GetFolderDetail(userId, folderName);
+            var folderDetails = await _folderRepository.FetchFolderDetails(userId, folderName);
             return Ok(folderDetails);
         }
     }

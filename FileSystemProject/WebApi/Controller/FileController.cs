@@ -1,6 +1,4 @@
-﻿using FileSystemProject.Models.RequestModels;
-using FileSystemProject.Models.ResponseModels;
-using FileSystemProject.Repository;
+﻿using FileSystemProject.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 //using Swashbuckle.AspNetCore.SwaggerUI; //uncomment to use swagger
@@ -26,17 +24,7 @@ namespace FileSystemProject.WebApi.Controller
         public async Task<List<Uri>> UploadFiles([FromForm] IFormFile file, [FromForm] string folderPath, [FromForm] string parentFolderId)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileBlobRepository.UploadFilesAsync(userId,file, folderPath, parentFolderId);
-
-            return blobUris;
-        }
-
-        [HttpPost]
-        [Route("getFiles", Name = "GetFile")]
-        public async Task<List<FileResponseModel>> GetFiles([FromBody] FileRequestModel obj)
-        {
-            var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileBlobRepository.GetFilesAsync(userId, obj.ParentFolderId);
+            var blobUris = await _fileBlobRepository.UploadFiles(userId,file, folderPath, parentFolderId);
 
             return blobUris;
         }

@@ -1,4 +1,6 @@
-﻿namespace FileSystemProject.Models.ResponseModels
+﻿using FileSystemProject.Enums;
+
+namespace FileSystemProject.Models.ResponseModels
 {
     public class FileResponseModel
     {
@@ -8,5 +10,6 @@
         public string FilePath { get; set; }
         public DateTime ModifiedDate { get; set; }
         public Uri FileDownloadUri { get; set; }
+        public FileOrFolderType FileType { get; set; } = FileOrFolderType.File;
     }
 }
