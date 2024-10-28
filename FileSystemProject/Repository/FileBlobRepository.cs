@@ -1,5 +1,6 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Specialized;
 using FileSystemProject.Models.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace FileSystemProject.Repository
 {
     public interface IFileBlobRepository
     {
-        Task<List<Uri>> UploadFiles(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId);
+        Task<List<Uri>> UploadFileChunks(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId, int chunkIndex, int totalNumberOfChunks, string fileBlobId,  string fileName, string fileExtension, int totalFileSize);
         Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId);
     }
     public class FileBlobRepository : IFileBlobRepository
@@ -24,26 +25,69 @@ namespace FileSystemProject.Repository
             _fileRepository = fileRepository;
         }
 
-        public async Task<List<Uri>> UploadFiles(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId)
+        public async Task<List<Uri>> UploadFileChunks(string userId, [FromForm] IFormFile fileChunk, string folderPath, string parentFolderId, int chunkIndex, int totalNumberOfChunks, string fileBlobId, string fileName, string fileExtension, int totalFileSize)
         {
-            var fileExtension = Path.GetExtension(file.FileName);
-            var filePath = $"{folderPath}/{file.FileName}";
             var blobUris = new List<Uri>();
-            var fileBlobId = Guid.NewGuid();
+            //var fileBlobId = Guid.NewGuid();
             var blobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}";
-            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            var blob = blobContainer.GetBlobClient(blobName);
+            var filePath = $"{folderPath}/{fileName}";
 
-            using (var stream = file.OpenReadStream())
+            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
+            var blob = blobContainer.GetAppendBlobClient(blobName);
+
+            if(chunkIndex == 0 && !await blob.ExistsAsync())
             {
-                await blob.UploadAsync(stream, true);
+                await blob.CreateAsync();
+            }
+
+            using (var stream = fileChunk.OpenReadStream())
+            {
+                await blob.AppendBlockAsync(stream);
             }
             blobUris.Add(blob.Uri);
-            Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
-            await  _fileRepository.InsertFileEntry(userId, file.FileName, file.Length, blob.Uri.ToString(), parentFolderGuid, filePath,false,false,DateTime.UtcNow, DateTime.UtcNow);
+
+            if (chunkIndex + 1 == totalNumberOfChunks)
+            {
+                Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
+                await _fileRepository.InsertFileEntry(userId, fileName, totalFileSize, blob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
+            }
 
             return blobUris;
         }
+
+        //public async Task MergeAllChunks(string userId, string fileBlobId, string folderPath, string parentFolderId, string fileExtension, int totalNumberOfChunks, int totalFileSize, string chunkName)
+        //{
+        //    var finalBlobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}";
+        //    var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
+        //    var finalBlob = blobContainer.GetBlobClient(finalBlobName);
+        //    var filePath = $"{folderPath}/{chunkName}";
+
+        //    //start merging file chunks
+        //    using (var outputStream = new MemoryStream())
+        //    {
+        //        for(int chunkIndex = 0; chunkIndex < totalNumberOfChunks; chunkIndex++)
+        //        {
+        //            var chunkBlobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}.part{chunkIndex}";
+        //            var chunkBlob = blobContainer.GetBlobClient(chunkBlobName);
+
+        //            //download each chunk
+        //            var downloadStream = await chunkBlob.OpenReadAsync();
+        //            await downloadStream.CopyToAsync(outputStream);
+
+        //            //delete chunk after appending
+        //            await chunkBlob.DeleteIfExistsAsync();
+
+        //        }
+
+        //        // upload the merged file
+        //        outputStream.Position = 0;
+        //        await finalBlob.UploadAsync(outputStream, true);
+        //    }
+
+        //    //add file entry in tble after entore file is uploaded
+        //    Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
+        //    await _fileRepository.InsertFileEntry(userId, $"{fileBlobId}{fileExtension}", totalFileSize, finalBlob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
+        //}
 
         public async Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId)
         {

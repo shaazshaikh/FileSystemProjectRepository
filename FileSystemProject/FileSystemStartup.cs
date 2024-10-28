@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -31,6 +32,10 @@ namespace FileSystemProject
             //{
             //    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My Api", Version = "v1" });
             //});
+            services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = (long)10 * 1024 * 1024 * 1024;
+            });
             services.AddCors(options =>
             {
                 options.AddPolicy("CorsPolicy",
@@ -78,6 +83,11 @@ namespace FileSystemProject
                 app.UseHsts();
             }
 
+            app.Use(async (context, next) =>
+            {
+                context.Features.Get<IHttpMaxRequestBodySizeFeature>().MaxRequestBodySize = (long)10 * 1024 * 1024 * 1024;
+                await next.Invoke();
+            });
             app.UseHttpsRedirection(); // Redirects http to https
             app.UseRouting();
             app.UseAuthentication();

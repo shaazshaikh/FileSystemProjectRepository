@@ -20,11 +20,11 @@ namespace FileSystemProject.WebApi.Controller
         }
 
         [HttpPost]
-        [Route("uploadFiles", Name = "UploadFile")]
-        public async Task<List<Uri>> UploadFiles([FromForm] IFormFile file, [FromForm] string folderPath, [FromForm] string parentFolderId)
+        [Route("uploadFilesInChunks", Name = "UploadFilesInChunks")]
+        public async Task<List<Uri>> UploadFilesInChunks([FromForm] IFormFile fileChunk, [FromForm] string folderPath, [FromForm] string parentFolderId, [FromForm] int chunkIndex, [FromForm] int totalNumberOfChunks, [FromForm] string fileBlobId, [FromForm] string fileName, [FromForm] string fileExtension, [FromForm] int totalFileSize = 0)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var blobUris = await _fileBlobRepository.UploadFiles(userId,file, folderPath, parentFolderId);
+            var blobUris = await _fileBlobRepository.UploadFileChunks(userId, fileChunk, folderPath, parentFolderId, chunkIndex, totalNumberOfChunks, fileBlobId, fileName, fileExtension, totalFileSize);
 
             return blobUris;
         }
