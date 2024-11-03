@@ -28,5 +28,13 @@ namespace FileSystemProject.WebApi.Controller
 
             return blobUris;
         }
+
+        [HttpGet]
+        [Route("getSASUrl", Name = "GetSASUrl")]
+        public IActionResult GetSASUrl([FromQuery] string filePath)
+        {
+            var sasUrl =  _fileBlobRepository.GenerateSASUrlForFile(filePath);
+            return Ok(sasUrl);
+        }
     }
 }
