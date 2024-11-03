@@ -1,6 +1,7 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Sas;
 using FileSystemProject.Models.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +11,7 @@ namespace FileSystemProject.Repository
     {
         Task<List<Uri>> UploadFileChunks(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId, int chunkIndex, int totalNumberOfChunks, string fileBlobId,  string fileName, string fileExtension, int totalFileSize);
         Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId);
+        Uri? GenerateSASUrlForFile(string filePath);
     }
     public class FileBlobRepository : IFileBlobRepository
     {
@@ -55,70 +57,14 @@ namespace FileSystemProject.Repository
             return blobUris;
         }
 
-        //public async Task MergeAllChunks(string userId, string fileBlobId, string folderPath, string parentFolderId, string fileExtension, int totalNumberOfChunks, int totalFileSize, string chunkName)
-        //{
-        //    var finalBlobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}";
-        //    var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-        //    var finalBlob = blobContainer.GetBlobClient(finalBlobName);
-        //    var filePath = $"{folderPath}/{chunkName}";
-
-        //    //start merging file chunks
-        //    using (var outputStream = new MemoryStream())
-        //    {
-        //        for(int chunkIndex = 0; chunkIndex < totalNumberOfChunks; chunkIndex++)
-        //        {
-        //            var chunkBlobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}.part{chunkIndex}";
-        //            var chunkBlob = blobContainer.GetBlobClient(chunkBlobName);
-
-        //            //download each chunk
-        //            var downloadStream = await chunkBlob.OpenReadAsync();
-        //            await downloadStream.CopyToAsync(outputStream);
-
-        //            //delete chunk after appending
-        //            await chunkBlob.DeleteIfExistsAsync();
-
-        //        }
-
-        //        // upload the merged file
-        //        outputStream.Position = 0;
-        //        await finalBlob.UploadAsync(outputStream, true);
-        //    }
-
-        //    //add file entry in tble after entore file is uploaded
-        //    Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
-        //    await _fileRepository.InsertFileEntry(userId, $"{fileBlobId}{fileExtension}", totalFileSize, finalBlob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
-        //}
-
         public async Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId)
         {
             var filesFromDatabase = await _fileRepository.GetFiles(userId, parentFolderId);
             var blobUris = new List<FileResponseModel>();
             var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            //var blobsPath = $"{userId}/{folderPath}";
-            //await foreach (var item in blobContainer.GetBlobsAsync(prefix: blobsPath))
-            //{
-            //    var uri = blobContainer.GetBlobClient(item.Name).Uri;
-            //    blobUris.Add(uri);
-            //}
 
             foreach(var file in filesFromDatabase)
             {
-                //var blobName = new Uri(file.StoragePath).AbsolutePath.Replace("/filesystemcontainer/","").TrimStart('/');
-                //var blobClient = blobContainer.GetBlobClient(blobName);
-                //if(await blobClient.ExistsAsync())
-                //{
-                //    var fileUri = blobClient.Uri;
-                //    blobUris.Add(new FileResponseModel
-                //    {
-                //        FileName = file.FileName,
-                //        FilePath = file.FilePath,
-                //        FileSize = file.FileSize,
-                //        FileDownloadUri = fileUri,
-                //        ModifiedDate = file.ModifiedDate,
-                //        StoragePath = file.StoragePath
-                //    });
-                //}
-
                 var fileUri = new Uri(file.StoragePath);
                 blobUris.Add(new FileResponseModel
                 {
@@ -132,6 +78,26 @@ namespace FileSystemProject.Repository
             }
 
             return blobUris;
+        }
+
+        public Uri? GenerateSASUrlForFile(string filePath)
+        {
+            var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
+            var blob = blobContainer.GetBlobClient(filePath);
+
+            var sas = new BlobSasBuilder
+            {
+                BlobContainerName = Configuration["FileStorage:FileContainerName"],
+                BlobName = filePath,
+                Resource = "b",
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(30)
+            };
+
+            sas.SetPermissions(BlobAccountSasPermissions.Read);
+            var sasUrl = blob.GenerateSasUri(sas);
+
+            return sasUrl;
+
         }
     }
 }
