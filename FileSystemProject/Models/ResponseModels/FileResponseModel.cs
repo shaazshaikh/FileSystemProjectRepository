@@ -4,6 +4,7 @@ namespace FileSystemProject.Models.ResponseModels
 {
     public class FileResponseModel
     {
+        public Guid Id { get; set; }
         public string FileName { get; set; }
         public long FileSize { get; set; }
         public string StoragePath { get; set; }
@@ -11,5 +12,6 @@ namespace FileSystemProject.Models.ResponseModels
         public DateTime ModifiedDate { get; set; }
         public Uri FileDownloadUri { get; set; }
         public FileOrFolderType FileType { get; set; } = FileOrFolderType.File;
+        public Guid? ParentFolderId { get; set; }
     }
 }

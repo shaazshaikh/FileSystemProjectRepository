@@ -26,11 +26,20 @@ namespace FileSystemProject.WebApi.Controller
         }
 
         [HttpGet]
-        [Route("getFolderDetails/{folderName}", Name = "getFolderDetails")]
-        public async Task<IActionResult> GetFolderDetails(string folderName)
+        [Route("getHomeFolderDetails/{folderName}", Name = "GetHomeFolderDetails")]
+        public async Task<IActionResult> GetHomeFolderDetails(string folderName)
         {
             var userId = HttpContext.Items["UserId"]?.ToString();
-            var folderDetails = await _folderRepository.FetchFolderDetails(userId, folderName);
+            var folderDetails = await _folderRepository.FetchHomeFolderDetails(userId, folderName);
+            return Ok(folderDetails);
+        }
+
+        [HttpGet]
+        [Route("getFolderDetails/{folderId}", Name = "GetFolderDetails")]
+        public async Task<IActionResult> GetFolderDetails(string folderId)
+        {
+            var userId = HttpContext.Items["UserId"]?.ToString();
+            var folderDetails = await _folderRepository.FetchFolderDetails(userId, folderId);
             return Ok(folderDetails);
         }
     }

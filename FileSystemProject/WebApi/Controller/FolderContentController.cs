@@ -27,19 +27,23 @@ namespace FileSystemProject.WebApi.Controller
 
             var files = (await filesTask).Select(file => new FolderContentResponseModel
             {
+                Id = file.Id,
                 Name = file.FileName,
                 ModifiedDate = file.ModifiedDate,
                 Type = file.FileType.ToString(),
                 Size = file.FileSize,
-                FileDownloadUri = file.FileDownloadUri
+                FileDownloadUri = file.FileDownloadUri,
+                ParentFolderId = file.ParentFolderId
             }).ToList();
 
             var folders = (await foldersTask).Select(folder => new FolderContentResponseModel
             {
+                Id = folder.Id,
                 Name = folder.FolderName,
                 ModifiedDate = folder.ModifiedDate,
                 Type = folder.FolderType.ToString(),
                 Size = null,
+                ParentFolderId = folder.ParentFolderId
             }).ToList();
 
             return files.Concat(folders).ToList();

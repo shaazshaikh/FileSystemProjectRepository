@@ -9,7 +9,8 @@ namespace FileSystemProject.Repository
     {
         Task<bool> InsertFolderEntry(string userId, string parentFolderId, string folderPath);
         Task<bool> DeleteFolderEntry();
-        Task<FolderResponseModel> FetchFolderDetails(string userId, string folderName);
+        Task<FolderResponseModel> FetchHomeFolderDetails(string userId, string folderName);
+        Task<FolderResponseModel> FetchFolderDetails(string userId, string folderId);
         Task<IEnumerable<FolderResponseModel>> FetchFolderContents(string userId, string parentFolderId);
     }
 
@@ -39,18 +40,30 @@ namespace FileSystemProject.Repository
             }
         }
 
-        public async Task<FolderResponseModel> FetchFolderDetails(string userId, string folderName)
+        public async Task<FolderResponseModel> FetchHomeFolderDetails(string userId, string folderName)
         {
-
-            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and folderName = @folderName";
-            FolderResponseModel folderDetails = await _dbConnection.QueryFirstOrDefaultAsync<FolderResponseModel>(sqlQuery, new
+            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and folderName = @folderName and parentFolderId is null";
+            FolderResponseModel homeFolderDetails = await _dbConnection.QueryFirstOrDefaultAsync<FolderResponseModel>(sqlQuery, new
             {
                 userId = Guid.Parse(userId),
                 foldername = folderName
             });
 
+            return homeFolderDetails;
+        }
+
+        public async Task<FolderResponseModel> FetchFolderDetails(string userId, string folderId)
+        {
+            string sqlQuery = "select Id, ParentFolderId, FolderPath, FolderName, CreatedDate, ModifiedDate from folders where userId = @userId and Id = @folderId";
+            FolderResponseModel folderDetails = await _dbConnection.QueryFirstOrDefaultAsync<FolderResponseModel>(sqlQuery, new
+            {
+                userId = Guid.Parse(userId),
+                folderId = Guid.Parse(folderId)
+            });
+
             return folderDetails;
         }
+
         public async Task<IEnumerable<FolderResponseModel>> FetchFolderContents(string userId, string parentFolderId)
         {
 
