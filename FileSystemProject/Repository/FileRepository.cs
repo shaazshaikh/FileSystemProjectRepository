@@ -40,7 +40,7 @@ namespace FileSystemProject.Repository
 
         public async Task<IEnumerable<FileResponseModel>> GetFiles(string userId, string parentFolderId)
         {
-            string getFilesQuery = "select fileName, fileSize, modifiedDate, storagePath, filePath from Files where userId = @UserId and parentFolderId = @ParentFolderId";
+            string getFilesQuery = "select Id, parentFolderId, fileName, fileSize, modifiedDate, storagePath, filePath from Files where userId = @UserId and parentFolderId = @ParentFolderId";
             Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
 
             var files = await _dbConnection.QueryAsync<FileResponseModel>(getFilesQuery, new { userId = Guid.Parse(userId), parentFolderId = parentFolderGuid });

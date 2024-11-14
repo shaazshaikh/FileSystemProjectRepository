@@ -68,12 +68,14 @@ namespace FileSystemProject.Repository
                 var fileUri = new Uri(file.StoragePath);
                 blobUris.Add(new FileResponseModel
                 {
+                    Id = file.Id,
                     FileName = file.FileName,
                     FilePath = file.FilePath,
                     FileSize = file.FileSize,
                     FileDownloadUri = fileUri,
                     ModifiedDate = file.ModifiedDate,
-                    StoragePath = file.StoragePath
+                    StoragePath = file.StoragePath,
+                    ParentFolderId = file.ParentFolderId
                 });
             }
 
