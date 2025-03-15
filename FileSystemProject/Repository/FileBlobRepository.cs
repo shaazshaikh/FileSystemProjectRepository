@@ -1,9 +1,12 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
+using Azure.Storage.Queues;
 using Azure.Storage.Sas;
 using FileSystemProject.Models.ResponseModels;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace FileSystemProject.Repository
 {
@@ -52,9 +55,56 @@ namespace FileSystemProject.Repository
             {
                 Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
                 await _fileRepository.InsertFileEntry(userId, fileName, totalFileSize, blob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
+
+                if (IsItVideoFile(fileExtension))
+                {
+                    try
+                    {
+                        var queueClient = new QueueClient("UseDevelopmentStorage=true", "transcode-queue", new QueueClientOptions
+                        {
+                            MessageEncoding = QueueMessageEncoding.Base64
+                        });
+
+                        await queueClient.CreateIfNotExistsAsync();
+
+                        var preMessage = new
+                        {
+                            UserId = userId,
+                            FileId = fileBlobId,
+                            BlobUri = blob.Uri.ToString(),
+                            FileName = fileName,
+                            FileExtension = fileExtension,
+                            FolderPath = folderPath
+                        };
+
+                        var jsonMessage = JsonConvert.SerializeObject(preMessage);
+                        var utf8Bytes = Encoding.UTF8.GetBytes(jsonMessage);
+                        var base64Message = Convert.ToBase64String(utf8Bytes);
+
+                        if (queueClient.Exists())
+                        {
+                            await queueClient.SendMessageAsync(base64Message);
+                        }
+                        else
+                        {
+                            throw new Exception("queue not created yet");
+                        }                      
+                    }
+                    catch(Exception e)
+                    {
+                        //handle exception
+                    }
+                    
+                }
             }
 
             return blobUris;
+        }
+
+        private bool IsItVideoFile(string fileExtension)
+        {
+            var extensions = new List<string> { ".mp4", ".mov", ".avi", ".mkv" };
+            return extensions.Contains(fileExtension.ToLower());
         }
 
         public async Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId)
@@ -95,7 +145,8 @@ namespace FileSystemProject.Repository
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(30)
             };
 
-            sas.SetPermissions(BlobAccountSasPermissions.Read);
+            //sas.SetPermissions(BlobAccountSasPermissions.Read);
+            sas.SetPermissions(BlobSasPermissions.Read);
             var sasUrl = blob.GenerateSasUri(sas);
 
             return sasUrl;
