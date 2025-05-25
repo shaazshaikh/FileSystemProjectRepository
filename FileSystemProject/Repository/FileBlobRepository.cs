@@ -74,7 +74,8 @@ namespace FileSystemProject.Repository
                             BlobUri = blob.Uri.ToString(),
                             FileName = fileName,
                             FileExtension = fileExtension,
-                            BlobName = blobName
+                            BlobName = blobName,
+                            FilePath = filePath
                         };
 
                         var jsonMessage = JsonConvert.SerializeObject(preMessage);
