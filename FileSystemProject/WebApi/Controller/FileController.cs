@@ -1,4 +1,5 @@
-﻿using FileSystemProject.Repository;
+﻿using FileSystemProject.Models.RequestModels;
+using FileSystemProject.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 //using Swashbuckle.AspNetCore.SwaggerUI; //uncomment to use swagger
@@ -13,10 +14,12 @@ namespace FileSystemProject.WebApi.Controller
     public class FileController : ControllerBase
     {
         private readonly IFileBlobRepository _fileBlobRepository;
+        private readonly IFileRepository _fileRepository;
 
-        public FileController(IFileBlobRepository fileBlobRepository)
+        public FileController(IFileBlobRepository fileBlobRepository, IFileRepository fileRepository)
         {
             _fileBlobRepository = fileBlobRepository;
+            _fileRepository = fileRepository;
         }
 
         [HttpPost]
@@ -28,6 +31,22 @@ namespace FileSystemProject.WebApi.Controller
 
             return blobUris;
         }
+
+        [HttpPost]
+        [Route("StorePlaylistFile", Name = "StorePlaylistFile")]
+        public async Task<IActionResult> StorePlaylistFile(StorePlaylistFileRequestModel model)
+        {
+            var isEntryAdded = await _fileRepository.InsertVideoEntry(model);
+            return Ok(isEntryAdded);
+        }
+
+        //[HttpGet]
+        //[Route("getStreamingPath/{fileId}", Name = "GetStreamingPath")]
+        //public async Task<IActionResult> GetStreamingPath(string fileId)
+        //{
+        //    var playlistFileUrl = await _fileRepository.GetStreamingPathUrl(fileId);
+        //    return Ok(playlistFileUrl);
+        //}
 
         [HttpGet]
         [Route("getSASUrl", Name = "GetSASUrl")]
