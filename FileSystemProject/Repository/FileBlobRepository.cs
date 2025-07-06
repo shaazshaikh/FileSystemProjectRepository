@@ -54,7 +54,7 @@ namespace FileSystemProject.Repository
             if (chunkIndex + 1 == totalNumberOfChunks)
             {
                 Guid? parentFolderGuid = parentFolderId != null ? Guid.Parse(parentFolderId) : null;
-                await _fileRepository.InsertFileEntry(userId, fileName, totalFileSize, blob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
+                var fileId = await _fileRepository.InsertFileEntry(userId, fileName, totalFileSize, blob.Uri.ToString(), parentFolderGuid, filePath, false, false, DateTime.UtcNow, DateTime.UtcNow);
 
                 if (IsItVideoFile(fileExtension))
                 {
@@ -70,7 +70,7 @@ namespace FileSystemProject.Repository
                         var preMessage = new
                         {
                             UserId = userId,
-                            FileId = fileBlobId,
+                            FileId = fileId,
                             BlobUri = blob.Uri.ToString(),
                             FileName = fileName,
                             FileExtension = fileExtension,
