@@ -40,19 +40,20 @@ namespace FileSystemProject.WebApi.Controller
             return Ok(isEntryAdded);
         }
 
-        //[HttpGet]
-        //[Route("getStreamingPath/{fileId}", Name = "GetStreamingPath")]
-        //public async Task<IActionResult> GetStreamingPath(string fileId)
-        //{
-        //    var playlistFileUrl = await _fileRepository.GetStreamingPathUrl(fileId);
-        //    return Ok(playlistFileUrl);
-        //}
+        [HttpGet]
+        [Route("getStreamingPath/{fileId}", Name = "GetStreamingPath")]
+        public async Task<IActionResult> GetStreamingPath(string fileId)
+        {
+            var playlistFilePath = await _fileRepository.GetStreamingPathUrl(fileId);
+            var sasUrl = _fileBlobRepository.GenerateSASUrlForFile(playlistFilePath, true);
+            return Ok(sasUrl);
+        }
 
         [HttpGet]
         [Route("getSASUrl", Name = "GetSASUrl")]
         public IActionResult GetSASUrl([FromQuery] string filePath)
         {
-            var sasUrl =  _fileBlobRepository.GenerateSASUrlForFile(filePath);
+            var sasUrl = _fileBlobRepository.GenerateSASUrlForFile(filePath);
             return Ok(sasUrl);
         }
     }

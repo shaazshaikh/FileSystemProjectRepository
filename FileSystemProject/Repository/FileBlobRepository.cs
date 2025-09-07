@@ -14,7 +14,7 @@ namespace FileSystemProject.Repository
     {
         Task<List<Uri>> UploadFileChunks(string userId, [FromForm] IFormFile file, string folderPath, string parentFolderId, int chunkIndex, int totalNumberOfChunks, string fileBlobId,  string fileName, string fileExtension, int totalFileSize);
         Task<List<FileResponseModel>> GetBlobFiles(string userId, string parentFolderId);
-        Uri? GenerateSASUrlForFile(string filePath);
+        Uri? GenerateSASUrlForFile(string filePath, bool isForStreaming = false);
     }
     public class FileBlobRepository : IFileBlobRepository
     {
@@ -33,7 +33,6 @@ namespace FileSystemProject.Repository
         public async Task<List<Uri>> UploadFileChunks(string userId, [FromForm] IFormFile fileChunk, string folderPath, string parentFolderId, int chunkIndex, int totalNumberOfChunks, string fileBlobId, string fileName, string fileExtension, int totalFileSize)
         {
             var blobUris = new List<Uri>();
-            //var fileBlobId = Guid.NewGuid();
             var blobName = $"{userId}/{folderPath}/{fileBlobId}{fileExtension}";
             var filePath = $"{folderPath}/{fileName}";
 
@@ -133,22 +132,45 @@ namespace FileSystemProject.Repository
             return blobUris;
         }
 
-        public Uri? GenerateSASUrlForFile(string filePath)
+        public Uri? GenerateSASUrlForFile(string filePath, bool isForStreaming = false)
         {
             var blobContainer = _blobServiceClient.GetBlobContainerClient(Configuration["FileStorage:FileContainerName"]);
-            var blob = blobContainer.GetBlobClient(filePath);
-
-            var sas = new BlobSasBuilder
+            Uri? sasUrl;
+            if (isForStreaming)
             {
-                BlobContainerName = Configuration["FileStorage:FileContainerName"],
-                BlobName = filePath,
-                Resource = "b",
-                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(30)
-            };
+                //var containerName = $"/{Configuration["FileStorage:FileContainerName"]}/";
+                //get blob name only from entire url
+                //filePath = filePath.Substring(filePath.IndexOf(containerName) + containerName.Length);
+                //var blob = blobContainer.GetBlobClient(filePath);
 
-            //sas.SetPermissions(BlobAccountSasPermissions.Read);
-            sas.SetPermissions(BlobSasPermissions.Read);
-            var sasUrl = blob.GenerateSasUri(sas);
+                var sas = new BlobSasBuilder
+                {
+                    BlobContainerName = Configuration["FileStorage:FileContainerName"],
+                    Resource = "c",
+                    ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(30)
+                };
+
+                sas.SetPermissions(BlobContainerSasPermissions.Read);
+                //sas.SetPermissions(BlobSasPermissions.Read);
+                sasUrl = blobContainer.GenerateSasUri(sas);
+                var sasToken = sasUrl.Query;
+                sasUrl = new Uri($"{filePath}{sasToken}");                              
+            }
+            else
+            {
+                var blob = blobContainer.GetBlobClient(filePath);
+
+                var sas = new BlobSasBuilder
+                {
+                    BlobContainerName = Configuration["FileStorage:FileContainerName"],
+                    BlobName = filePath,
+                    Resource = "b",
+                    ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(30)
+                };
+
+                sas.SetPermissions(BlobSasPermissions.Read);
+                sasUrl = blob.GenerateSasUri(sas);
+            }
 
             return sasUrl;
 

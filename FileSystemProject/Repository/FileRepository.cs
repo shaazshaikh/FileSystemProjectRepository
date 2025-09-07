@@ -11,7 +11,7 @@ namespace FileSystemProject.Repository
         Task<bool> InsertVideoEntry(StorePlaylistFileRequestModel model);
         Task<bool> DeleteFileEntry();
         Task<IEnumerable<FileResponseModel>> GetFiles(string userId, string parentFolderId);
-        //Task<string?> GetStreamingPathUrl(string fileId);
+        Task<string?> GetStreamingPathUrl(string fileId);
     }
 
     public class FileRepository : IFileRepository
@@ -67,12 +67,12 @@ namespace FileSystemProject.Repository
             return files;
         }
 
-        //public async Task<string?> GetStreamingPathUrl(string fileId)
-        //{
-        //    string getStreamingPathQuery = "select StreamingPath from Videos where fileId = @FileId and Resolution = '720p'";
-        //    Guid fileGuid = Guid.Parse(fileId);
-        //    var streamingPath = await _dbConnection.QueryFirstOrDefaultAsync<string>(getStreamingPathQuery, new { FileId = fileGuid });
-        //    return streamingPath;
-        //}
+        public async Task<string?> GetStreamingPathUrl(string fileId)
+        {
+            string getStreamingPathQuery = "select StreamingPath from Videos where fileId = @FileId and Resolution = '720p'";
+            Guid fileGuid = Guid.Parse(fileId);
+            var streamingPath = await _dbConnection.QueryFirstOrDefaultAsync<string>(getStreamingPathQuery, new { FileId = fileGuid });
+            return streamingPath;
+        }
     }
 }
